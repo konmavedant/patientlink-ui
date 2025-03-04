@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useEhrAuth } from "@/contexts/EhrAuthContext";
 
 const Index = () => {
   const [username, setUsername] = useState("");
@@ -13,37 +14,51 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login } = useEhrAuth();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      // Use the actual email format from mockEhrData
+      let email = "";
       
-      // Hardcoded login logic
-      if (username === "patient" && password === "password") {
+      // Map username to the correct email format
+      if (username === "patient") {
+        email = "jane.doe@example.com";
+      } else if (username === "doctor") {
+        email = "dr.chen@hospital.com";
+      } else {
+        // If they enter an actual email, use that
+        email = username;
+      }
+      
+      await login(email, password === "password" ? (username === "patient" ? "patient123" : "doctor123") : password);
+      
+      // Check user role and redirect accordingly
+      if (username === "patient" || email.includes("@example.com")) {
         toast({
           title: "Login successful",
           description: "Welcome to your Patient Dashboard",
         });
-        // In a real app, we would set auth context, tokens, etc.
         navigate("/patient-dashboard");
-      } else if (username === "doctor" && password === "password") {
+      } else {
         toast({
           title: "Login successful",
           description: "Welcome to your Provider Dashboard",
         });
         navigate("/provider-dashboard");
-      } else {
-        toast({
-          title: "Login failed",
-          description: "Invalid credentials. Try 'patient' or 'doctor' with password 'password'",
-          variant: "destructive",
-        });
       }
-    }, 1000);
+    } catch (error) {
+      toast({
+        title: "Login failed",
+        description: "Invalid credentials. Try 'patient' or 'doctor' with password 'password'",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
