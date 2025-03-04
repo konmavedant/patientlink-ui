@@ -8,8 +8,8 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
 // Import EHR components
-import { PatientDashboard } from "./components/ehr/dashboard/PatientDashboard";
-import { ProviderDashboard } from "./components/ehr/dashboard/ProviderDashboard";
+import PatientDashboard from "./components/ehr/dashboard/PatientDashboard";
+import ProviderDashboard from "./components/ehr/dashboard/ProviderDashboard";
 import MainLayout from "./components/ehr/layout/MainLayout";
 import MedicalRecords from "./components/ehr/records/MedicalRecords";
 import LoginPage from "./components/ehr/auth/LoginPage";
