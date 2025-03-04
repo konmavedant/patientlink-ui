@@ -9,8 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { getRecordsByPatientId } from '@/data/mockEhrData';
 import { MedicalRecord, RecordType } from '@/types/ehr';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { CalendarDays, Activity, FileText, Flask, Syringe, HeartPulse, Image, FileText as FileIcon, Filter, Search, Eye } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { CalendarDays, Activity, FileText, FlaskConical, Syringe, HeartPulse, Image, FileText as FileIcon, Filter, Search, Eye } from 'lucide-react';
 
 const MedicalRecords: React.FC<{ patientId?: string }> = ({ patientId }) => {
   const { user } = useEhrAuth();
@@ -57,7 +57,7 @@ const MedicalRecords: React.FC<{ patientId?: string }> = ({ patientId }) => {
       case 'prescription':
         return <FileText className="h-5 w-5" />;
       case 'lab':
-        return <Flask className="h-5 w-5" />;
+        return <FlaskConical className="h-5 w-5" />;
       case 'vaccination':
         return <Syringe className="h-5 w-5" />;
       case 'vitals':
@@ -116,13 +116,13 @@ const MedicalRecords: React.FC<{ patientId?: string }> = ({ patientId }) => {
             <Filter className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <div className="relative">
               <Dialog>
-                <Dialog.Trigger asChild>
+                <DialogTrigger asChild>
                   <Button variant="outline" className="w-full justify-start pl-9">
                     {selectedTypes.length > 0 
                       ? `${selectedTypes.length} types selected` 
                       : "Filter by record type"}
                   </Button>
-                </Dialog.Trigger>
+                </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Filter by Record Type</DialogTitle>
