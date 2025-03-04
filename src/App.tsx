@@ -14,6 +14,9 @@ import MainLayout from "./components/ehr/layout/MainLayout";
 import MedicalRecords from "./components/ehr/records/MedicalRecords";
 import LoginPage from "./components/ehr/auth/LoginPage";
 
+// Import the EhrAuthProvider
+import { EhrAuthProvider } from "./contexts/EhrAuthContext";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -22,21 +25,23 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          
-          {/* EHR Routes */}
-          <Route path="/ehr/login" element={<LoginPage />} />
-          
-          <Route path="/" element={<MainLayout />}>
-            <Route path="/patient-dashboard" element={<PatientDashboard />} />
-            <Route path="/provider-dashboard" element={<ProviderDashboard />} />
-            <Route path="/medical-records/:patientId?" element={<MedicalRecords />} />
-          </Route>
-          
-          {/* Catch-all route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <EhrAuthProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            
+            {/* EHR Routes */}
+            <Route path="/ehr/login" element={<LoginPage />} />
+            
+            <Route path="/" element={<MainLayout />}>
+              <Route path="/patient-dashboard" element={<PatientDashboard />} />
+              <Route path="/provider-dashboard" element={<ProviderDashboard />} />
+              <Route path="/medical-records/:patientId?" element={<MedicalRecords />} />
+            </Route>
+            
+            {/* Catch-all route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </EhrAuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

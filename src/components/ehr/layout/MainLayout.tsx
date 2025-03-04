@@ -21,7 +21,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ requiredRole }) => {
   }
   
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    // Updated redirect path to match the route in App.tsx
+    return <Navigate to="/" replace />;
   }
   
   if (requiredRole && user?.role !== requiredRole) {
