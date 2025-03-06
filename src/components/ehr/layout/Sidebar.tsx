@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useEhrAuth } from '@/contexts/EhrAuthContext';
 import { cn } from '@/lib/utils';
@@ -16,27 +16,34 @@ import {
   Search,
   History,
   Shield,
+  Menu,
+  X,
 } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
   const { user } = useEhrAuth();
+  const [isExpanded, setIsExpanded] = useState(false);
 
   if (!user) return null;
 
   const isPatient = user.role === 'patient';
   const isProvider = user.role === 'provider';
 
+  const toggleSidebar = () => {
+    setIsExpanded(!isExpanded);
+  };
+
   const navigationItems = [
     {
       title: 'Dashboard',
       icon: <LayoutDashboard className="w-5 h-5" />,
-      href: '/dashboard',
+      href: isPatient ? '/patient-dashboard' : '/provider-dashboard',
       roles: ['patient', 'provider'],
     },
     {
       title: 'Medical Records',
       icon: <FileText className="w-5 h-5" />,
-      href: '/records',
+      href: '/medical-records',
       roles: ['patient', 'provider'],
     },
     {
@@ -112,49 +119,71 @@ const Sidebar: React.FC = () => {
   );
 
   return (
-    <aside className="hidden lg:flex w-64 flex-col border-r bg-card">
-      <div className="flex h-16 items-center border-b px-6">
-        <div className="flex items-center">
-          <div className="mr-2 rounded-md h-8 w-8 bg-primary"></div>
-          <span className="text-xl font-semibold">
-            HealthChain
-          </span>
-        </div>
-      </div>
-      <div className="flex-1 overflow-auto py-4">
-        <nav className="grid items-start px-4 text-sm">
-          {filteredNavigation.map((item, index) => (
-            <NavLink
-              key={index}
-              to={item.href}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary',
-                  isActive
-                    ? 'bg-primary/10 text-primary font-medium'
-                    : 'text-muted-foreground'
-                )
-              }
-            >
-              {item.icon}
-              {item.title}
-            </NavLink>
-          ))}
-        </nav>
-      </div>
-      <div className="mt-auto border-t p-4">
-        <div className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-muted-foreground">
-          <div className="flex flex-col space-y-1">
-            <span className="text-xs font-medium leading-none text-muted-foreground">
-              {isPatient ? 'Patient Portal' : 'Provider Portal'}
-            </span>
-            <span className="text-sm font-medium leading-none text-foreground">
-              {user.name}
+    <>
+      {/* Mobile toggle button for responsive mode */}
+      <button 
+        onClick={toggleSidebar} 
+        className="fixed lg:hidden z-50 top-4 left-4 bg-primary text-white p-2 rounded-md"
+      >
+        {isExpanded ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+      </button>
+      
+      {/* Mobile overlay */}
+      {isExpanded && (
+        <div 
+          className="fixed inset-0 bg-black/30 lg:hidden z-40"
+          onClick={() => setIsExpanded(false)}
+        />
+      )}
+
+      <aside className={cn(
+        "lg:flex flex-col border-r bg-card z-50 fixed lg:static h-full transition-all duration-300",
+        isExpanded ? "flex w-64" : "hidden lg:flex lg:w-64"
+      )}>
+        <div className="flex h-16 items-center border-b px-6">
+          <div className="flex items-center">
+            <div className="mr-2 rounded-md h-8 w-8 bg-primary"></div>
+            <span className="text-xl font-semibold">
+              HealthChain
             </span>
           </div>
         </div>
-      </div>
-    </aside>
+        <div className="flex-1 overflow-auto py-4">
+          <nav className="grid items-start px-4 text-sm">
+            {filteredNavigation.map((item, index) => (
+              <NavLink
+                key={index}
+                to={item.href}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary',
+                    isActive
+                      ? 'bg-primary/10 text-primary font-medium'
+                      : 'text-muted-foreground'
+                  )
+                }
+                onClick={() => setIsExpanded(false)}
+              >
+                {item.icon}
+                {item.title}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+        <div className="mt-auto border-t p-4">
+          <div className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-muted-foreground">
+            <div className="flex flex-col space-y-1">
+              <span className="text-xs font-medium leading-none text-muted-foreground">
+                {isPatient ? 'Patient Portal' : 'Provider Portal'}
+              </span>
+              <span className="text-sm font-medium leading-none text-foreground">
+                {user.name}
+              </span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </>
   );
 };
 

@@ -21,7 +21,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ requiredRole }) => {
   }
   
   if (!isAuthenticated) {
-    // Updated redirect path to match the route in App.tsx
     return <Navigate to="/" replace />;
   }
   
@@ -30,11 +29,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ requiredRole }) => {
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background relative">
       <Sidebar />
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex flex-col flex-1 overflow-hidden w-full">
         <Header />
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto p-6 pt-20 lg:pt-6">
           <Outlet />
         </main>
       </div>
