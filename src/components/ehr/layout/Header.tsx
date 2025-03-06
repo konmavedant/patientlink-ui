@@ -19,11 +19,13 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useNavigate } from 'react-router-dom';
+import ConnectWallet from '../wallet/ConnectWallet';
 
 const Header: React.FC = () => {
   const { user, logout } = useEhrAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   
   if (!user) return null;
   
@@ -78,7 +80,9 @@ const Header: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-4">
-          <Popover>
+          <ConnectWallet />
+
+          <Popover open={isNotificationsOpen} onOpenChange={setIsNotificationsOpen}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
@@ -118,8 +122,13 @@ const Header: React.FC = () => {
                 )}
               </div>
               <div className="border-t px-4 py-2">
-                <Button variant="ghost" size="sm" className="w-full">
-                  View all
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => setIsNotificationsOpen(false)}
+                >
+                  Close
                 </Button>
               </div>
             </PopoverContent>

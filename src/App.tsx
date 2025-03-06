@@ -17,13 +17,19 @@ import LoginPage from "./components/ehr/auth/LoginPage";
 // Import the EhrAuthProvider
 import { EhrAuthProvider } from "./contexts/EhrAuthContext";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
-      <Sonner />
       <BrowserRouter>
         <EhrAuthProvider>
           <Routes>
