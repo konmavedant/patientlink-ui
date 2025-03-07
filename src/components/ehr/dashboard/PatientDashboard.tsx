@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { useEhrAuth } from '@/contexts/EhrAuthContext';
-import { getRecordsByPatientId, getAccessPermissionsByPatientId, getNotificationsByUserId } from '@/data/mockEhrData';
+import { getMedicalRecordsByPatientId, getAccessPermissionsByPatientId, getNotificationsByUserId } from '@/data/mockEhrData';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +14,7 @@ const PatientDashboard: React.FC = () => {
   if (!user || user.role !== 'patient') return null;
   
   const patient = user as Patient;
-  const medicalRecords = getRecordsByPatientId(patient.id);
+  const medicalRecords = getMedicalRecordsByPatientId(patient.id);
   const accessPermissions = getAccessPermissionsByPatientId(patient.id);
   const notifications = getNotificationsByUserId(patient.id);
   

@@ -853,6 +853,9 @@ export const getProviderById = (providerId: string): Provider | undefined => {
   return mockProviders.find(provider => provider.id === providerId);
 };
 
+// For backward compatibility - alias for getMedicalRecordsByPatientId
+export const getRecordsByPatientId = getMedicalRecordsByPatientId;
+
 // Mock notifications
 export const mockNotifications: Notification[] = [
   {

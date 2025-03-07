@@ -25,5 +25,26 @@ export const useMobile = () => {
   return isMobile;
 };
 
+// Custom hook to detect specific screen sizes using media queries
+export const useMediaQuery = (query: string) => {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    if (media.matches !== matches) {
+      setMatches(media.matches);
+    }
+
+    const listener = () => {
+      setMatches(media.matches);
+    };
+
+    media.addEventListener('change', listener);
+    return () => media.removeEventListener('change', listener);
+  }, [matches, query]);
+
+  return matches;
+};
+
 // Export an alias for consistency with errors
 export const useIsMobile = useMobile;

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useEhrAuth } from '@/contexts/EhrAuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { getRecordsByPatientId } from '@/data/mockEhrData';
+import { getMedicalRecordsByPatientId } from '@/data/mockEhrData';
 import { MedicalRecord, RecordType } from '@/types/ehr';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { CalendarDays, Activity, FileText, FlaskConical, Syringe, HeartPulse, Image, FileText as FileIcon, Filter, Search, Eye } from 'lucide-react';
@@ -22,7 +21,7 @@ const MedicalRecords: React.FC<{ patientId?: string }> = ({ patientId }) => {
   
   // Use the provided patientId (for provider view) or the logged-in user's id (for patient view)
   const recordsPatientId = patientId || (user.role === 'patient' ? user.id : '');
-  const records = getRecordsByPatientId(recordsPatientId);
+  const records = getMedicalRecordsByPatientId(recordsPatientId);
   
   // Filter records by type and search text
   const filteredRecords = records.filter(record => {

@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useEhrAuth } from '@/contexts/EhrAuthContext';
-import { mockPatients, getRecordsByPatientId } from '@/data/mockEhrData';
+import { mockPatients, getMedicalRecordsByPatientId } from '@/data/mockEhrData';
 import { Patient } from '@/types/ehr';
 
 const PatientsPage: React.FC = () => {
