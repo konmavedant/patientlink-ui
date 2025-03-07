@@ -2,7 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Shield, Database, Lock, Clock, FileText, RefreshCw, FileLock2, Heart, Stethoscope } from "lucide-react";
+import { Shield, Database, Lock, Clock, FileText, RefreshCw, FileLock2, Heart, Stethoscope, LockKeyhole } from "lucide-react";
 import Navbar from "@/components/ehr/auth/Navbar";
 
 const Index = () => {
