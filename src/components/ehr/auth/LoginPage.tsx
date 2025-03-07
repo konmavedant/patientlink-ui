@@ -25,8 +25,16 @@ const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login(email, password);
-    navigate('/dashboard');
+    const loggedInUser = await login(email, password);
+    
+    // Navigate based on user role
+    if (loggedInUser) {
+      if (loggedInUser.role === 'patient') {
+        navigate('/patient-dashboard');
+      } else {
+        navigate('/provider-dashboard');
+      }
+    }
   };
 
   const handleDemoLogin = async (role: 'patient' | 'provider') => {
@@ -43,8 +51,16 @@ const LoginPage: React.FC = () => {
 
     setEmail(demoEmail);
     setPassword(demoPassword);
-    await login(demoEmail, demoPassword);
-    navigate('/dashboard');
+    const loggedInUser = await login(demoEmail, demoPassword);
+    
+    // Navigate based on user role
+    if (loggedInUser) {
+      if (loggedInUser.role === 'patient') {
+        navigate('/patient-dashboard');
+      } else {
+        navigate('/provider-dashboard');
+      }
+    }
   };
 
   const setDemoCredentials = (role: 'patient' | 'provider') => {

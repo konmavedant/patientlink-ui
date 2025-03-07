@@ -7,7 +7,7 @@ type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User | null>;
   logout: () => void;
   isAuthenticated: boolean;
 };
@@ -43,7 +43,7 @@ export const EhrAuthProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User | null> => {
     setIsLoading(true);
     setError(null);
 
@@ -69,9 +69,11 @@ export const EhrAuthProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setUser(foundUser);
       localStorage.setItem('ehr_user', JSON.stringify(foundUser));
       console.log('Login successful for', foundUser.name);
+      return foundUser;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during login');
       console.error('Login error:', err);
+      return null;
     } finally {
       setIsLoading(false);
     }
