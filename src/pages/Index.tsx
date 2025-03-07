@@ -47,11 +47,11 @@ const Index = () => {
             <div className="relative">
               <div className="aspect-w-5 aspect-h-3 rounded-lg overflow-hidden shadow-xl bg-white p-2">
                 <img
-                  src="/placeholder.svg"
-                  alt="HealthChain Dashboard"
-                  className="object-cover w-full h-full"
+                  src="/lovable-uploads/ca3c13fc-9dbc-4855-bff3-70dfefd61fab.png"
+                  alt="Healthcare professionals with patient"
+                  className="object-cover w-full h-full rounded-lg"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent rounded-lg"></div>
               </div>
               <div className="absolute -bottom-4 -right-4 bg-primary text-white p-4 rounded-lg shadow-lg">
                 <Shield className="h-8 w-8" />
