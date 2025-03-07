@@ -47,6 +47,7 @@ const App = () => (
             
             {/* EHR Routes */}
             <Route path="/ehr/login" element={<LoginPage />} />
+            <Route path="/login" element={<LoginPage />} />
             
             <Route path="/" element={<MainLayout />}>
               <Route path="/patient-dashboard" element={<PatientDashboard />} />
