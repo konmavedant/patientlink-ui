@@ -21,7 +21,13 @@ import {
 import { useNavigate } from 'react-router-dom';
 import ConnectWallet from '../wallet/ConnectWallet';
 
-const Header: React.FC = () => {
+// Add the interface to define the prop types
+interface HeaderProps {
+  onMenuClick?: () => void;
+  showMenuButton?: boolean;
+}
+
+const Header: React.FC<HeaderProps> = ({ onMenuClick, showMenuButton }) => {
   const { user, logout } = useEhrAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -54,17 +60,19 @@ const Header: React.FC = () => {
   return (
     <header className="sticky top-0 z-10 w-full bg-background/95 backdrop-blur-sm border-b">
       <div className="flex h-16 items-center justify-between px-4 sm:px-6">
-        <button
-          type="button"
-          className="lg:hidden p-2 text-gray-500 hover:text-gray-600"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        >
-          {isMobileMenuOpen ? (
-            <X className="h-6 w-6" />
-          ) : (
-            <Menu className="h-6 w-6" />
-          )}
-        </button>
+        {showMenuButton && (
+          <button
+            type="button"
+            className="lg:hidden p-2 text-gray-500 hover:text-gray-600"
+            onClick={onMenuClick}
+          >
+            {isMobileMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
+          </button>
+        )}
 
         <div className="flex items-center">
           <div className="relative rounded-md">

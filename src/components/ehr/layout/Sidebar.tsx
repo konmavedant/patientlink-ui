@@ -20,7 +20,12 @@ import {
   X,
 } from 'lucide-react';
 
-const Sidebar: React.FC = () => {
+// Add the interface to define the prop types
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const { user } = useEhrAuth();
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -31,6 +36,9 @@ const Sidebar: React.FC = () => {
 
   const toggleSidebar = () => {
     setIsExpanded(!isExpanded);
+    if (isExpanded && onClose) {
+      onClose();
+    }
   };
 
   const navigationItems = [
@@ -132,7 +140,10 @@ const Sidebar: React.FC = () => {
       {isExpanded && (
         <div 
           className="fixed inset-0 bg-black/30 lg:hidden z-40"
-          onClick={() => setIsExpanded(false)}
+          onClick={() => {
+            setIsExpanded(false);
+            if (onClose) onClose();
+          }}
         />
       )}
 
@@ -162,7 +173,10 @@ const Sidebar: React.FC = () => {
                       : 'text-muted-foreground'
                   )
                 }
-                onClick={() => setIsExpanded(false)}
+                onClick={() => {
+                  setIsExpanded(false);
+                  if (onClose) onClose();
+                }}
               >
                 {item.icon}
                 {item.title}
