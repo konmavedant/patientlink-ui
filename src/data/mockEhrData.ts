@@ -1,4 +1,4 @@
-<lov-code>
+
 import { 
   Patient, 
   Provider, 
@@ -472,7 +472,7 @@ export const mockMedicalRecords: Record<string, MedicalRecord[]> = {
         severity: 'Moderate',
         preliminaryDiagnosis: 'Suspected meniscus tear'
       },
-      blockchainHash: '0xp9o8i7u6y5t4r3e2w1q0p9o8i7u6y5t4r3e2w1q0',
+      blockchainHash: '0x9a8b7c6d5e4f3g2h1i0j9k8l7m6n5o4p3q2r1s0t',
       lastModified: '2023-04-10T12:45:00'
     },
     {
@@ -781,4 +781,130 @@ export const mockAuditLogs: Record<string, AuditLogEntry[]> = {
         name: 'Jane Doe',
         role: 'patient'
       },
-      patientId: '
+      patientId: 'p1',
+      details: 'Viewed all medical records'
+    }
+  ],
+  'p2': [
+    {
+      id: 'log7',
+      timestamp: '2023-01-03T15:45:00',
+      action: 'grant',
+      performedBy: {
+        id: 'p2',
+        name: 'John Smith',
+        role: 'patient'
+      },
+      patientId: 'p2',
+      details: 'Granted access to Dr. Elizabeth Chen'
+    },
+    {
+      id: 'log8',
+      timestamp: '2023-01-10T11:15:00',
+      action: 'create',
+      performedBy: {
+        id: 'doc1',
+        name: 'Dr. Elizabeth Chen',
+        role: 'provider'
+      },
+      recordId: 'rec6',
+      recordType: 'visit',
+      patientId: 'p2',
+      details: 'Created wellness check record'
+    }
+  ],
+  'p3': [
+    {
+      id: 'log9',
+      timestamp: '2023-03-20T14:25:00',
+      action: 'grant',
+      performedBy: {
+        id: 'p3',
+        name: 'Maria Garcia',
+        role: 'patient'
+      },
+      patientId: 'p3',
+      details: 'Granted access to Dr. Olivia Brown'
+    }
+  ],
+  'p4': [],
+  'p5': [],
+  'p6': []
+};
+
+// Add helper functions to get data more easily
+export const getMedicalRecordsByPatientId = (patientId: string): MedicalRecord[] => {
+  return mockMedicalRecords[patientId] || [];
+};
+
+export const getAccessPermissionsByPatientId = (patientId: string): AccessPermission[] => {
+  return mockAccessPermissions[patientId] || [];
+};
+
+export const getAuditLogsByPatientId = (patientId: string): AuditLogEntry[] => {
+  return mockAuditLogs[patientId] || [];
+};
+
+export const getPatientById = (patientId: string): Patient | undefined => {
+  return mockPatients.find(patient => patient.id === patientId);
+};
+
+export const getProviderById = (providerId: string): Provider | undefined => {
+  return mockProviders.find(provider => provider.id === providerId);
+};
+
+// Mock notifications
+export const mockNotifications: Notification[] = [
+  {
+    id: 'notif1',
+    userId: 'p1',
+    title: 'New Medical Record',
+    message: 'Dr. Elizabeth Chen added a new lab result to your records.',
+    date: '2023-04-23T09:30:00',
+    read: false,
+    type: 'update',
+    relatedId: 'rec4'
+  },
+  {
+    id: 'notif2',
+    userId: 'p1',
+    title: 'Access Request',
+    message: 'Dr. Olivia Brown has requested access to your medical records.',
+    date: '2023-05-01T16:10:00',
+    read: false,
+    type: 'access',
+    relatedId: 'acc3'
+  },
+  {
+    id: 'notif3',
+    userId: 'doc1',
+    title: 'New Patient',
+    message: 'You have been granted access to John Smith\'s medical records.',
+    date: '2023-01-03T15:45:00',
+    read: true,
+    type: 'access',
+    relatedId: 'acc4'
+  },
+  {
+    id: 'notif4',
+    userId: 'p2',
+    title: 'Appointment Reminder',
+    message: 'You have an appointment with Dr. Elizabeth Chen tomorrow at 10:00 AM.',
+    date: '2023-03-14T08:00:00',
+    read: true,
+    type: 'info'
+  },
+  {
+    id: 'notif5',
+    userId: 'p4',
+    title: 'Appointment Scheduled',
+    message: 'MRI appointment confirmed for April 17 at 9:00 AM at Medical Imaging Center.',
+    date: '2023-04-10T13:30:00',
+    read: false,
+    type: 'info'
+  }
+];
+
+export const getNotificationsByUserId = (userId: string): Notification[] => {
+  return mockNotifications.filter(notification => notification.userId === userId);
+};
