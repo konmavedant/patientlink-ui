@@ -1,24 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
 import { Upload, FileText, CheckCircle, FilePlus, X, Loader2 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useEhrAuth } from '@/contexts/EhrAuthContext';
 import { toast } from '@/components/ui/use-toast';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { registerDocument } from '@/services/blockchainService';
+import { useDocumentUpload } from '@/hooks/useDocumentUpload';
+import { getCurrentWalletAddress } from '@/services/blockchainService';
 import ConnectWallet from '@/components/ehr/wallet/ConnectWallet';
-import { Badge } from '@/components/ui/badge';
-import { ethers } from 'ethers';
-
-// Simple hash function for demo purposes
-const hashDocument = async (file: File): Promise<string> => {
-  const arrayBuffer = await file.arrayBuffer();
-  const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
-};
 
 interface UploadedDocument {
   id: string;
@@ -33,13 +23,11 @@ interface UploadedDocument {
 
 const UploadDataPage: React.FC = () => {
   const { user } = useEhrAuth();
+  const { uploadDocument, isUploading } = useDocumentUpload();
   const [dragActive, setDragActive] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [walletConnected, setWalletConnected] = useState(false);
-  
+  const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
+
   useEffect(() => {
     const checkWallet = async () => {
       if (window.ethereum) {
@@ -76,21 +64,16 @@ const UploadDataPage: React.FC = () => {
       setDragActive(false);
     }
   };
-  
+
   const processFiles = async (files: FileList | null) => {
     if (!files) return;
-    
-    setIsUploading(true);
     
     const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
     const maxSize = 10 * 1024 * 1024; // 10MB
     
-    const newDocuments: UploadedDocument[] = [];
-    
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       
-      // Validate file type and size
       if (!allowedTypes.includes(file.type)) {
         toast({
           title: "Invalid File Type",
@@ -109,37 +92,29 @@ const UploadDataPage: React.FC = () => {
         continue;
       }
       
-      // Create document hash
-      const hash = await hashDocument(file);
+      const { success, hash } = await uploadDocument(file);
       
-      // Generate preview for images
-      let preview = undefined;
-      if (file.type.startsWith('image/')) {
-        preview = URL.createObjectURL(file);
+      if (success && hash) {
+        // Generate preview for images
+        let preview = undefined;
+        if (file.type.startsWith('image/')) {
+          preview = URL.createObjectURL(file);
+        }
+        
+        const newDocument: UploadedDocument = {
+          id: crypto.randomUUID(),
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          uploadDate: new Date(),
+          hash,
+          registered: true,
+          preview
+        };
+        
+        setUploadedDocuments(prev => [newDocument, ...prev]);
       }
-      
-      newDocuments.push({
-        id: crypto.randomUUID(),
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        uploadDate: new Date(),
-        hash,
-        registered: false,
-        preview
-      });
     }
-    
-    setUploadedDocuments(prev => [...newDocuments, ...prev]);
-    
-    if (newDocuments.length > 0) {
-      toast({
-        title: "Files Uploaded",
-        description: `Successfully uploaded ${newDocuments.length} file(s)`,
-      });
-    }
-    
-    setIsUploading(false);
   };
   
   const handleDrop = (e: React.DragEvent) => {
@@ -152,49 +127,6 @@ const UploadDataPage: React.FC = () => {
   
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     processFiles(e.target.files);
-  };
-  
-  const handleRegisterDocument = async (document: UploadedDocument) => {
-    if (!walletConnected) {
-      toast({
-        title: "Wallet Not Connected",
-        description: "Please connect your wallet to register documents on blockchain",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsRegistering(true);
-    
-    try {
-      const success = await registerDocument(document.hash, document.type);
-      
-      if (success) {
-        setUploadedDocuments(prev => 
-          prev.map(doc => 
-            doc.id === document.id ? { ...doc, registered: true } : doc
-          )
-        );
-      }
-    } catch (error) {
-      console.error("Error registering document:", error);
-      toast({
-        title: "Registration Error",
-        description: "An error occurred while registering the document",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRegistering(false);
-    }
-  };
-  
-  const handleRemoveDocument = (id: string, preview?: string) => {
-    // Clean up preview URL if it exists
-    if (preview) {
-      URL.revokeObjectURL(preview);
-    }
-    
-    setUploadedDocuments(prev => prev.filter(doc => doc.id !== id));
   };
   
   const formatFileSize = (bytes: number) => {
@@ -307,13 +239,6 @@ const UploadDataPage: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium text-sm truncate">{document.name}</h4>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => handleRemoveDocument(document.id, document.preview)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
                     </div>
                     
                     <div className="flex items-center gap-2 mt-1">
@@ -331,23 +256,7 @@ const UploadDataPage: React.FC = () => {
                           <CheckCircle className="h-3 w-3 mr-1" />
                           Registered on Blockchain
                         </div>
-                      ) : (
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleRegisterDocument(document)}
-                          disabled={isRegistering || !walletConnected}
-                        >
-                          {isRegistering ? (
-                            <>
-                              <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                              Registering...
-                            </>
-                          ) : (
-                            "Register on Blockchain"
-                          )}
-                        </Button>
-                      )}
+                      ) : null}
                     </div>
                     
                     {document.preview && (

@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useEhrAuth } from '@/contexts/EhrAuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,11 +10,13 @@ import { mockPatients, mockMedicalRecords, getAccessPermissionsByPatientId, getN
 import { Search, Users, Calendar, FileText, ClipboardList, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Provider } from '@/types/ehr';
+import { getAccessibleDocuments, getCurrentWalletAddress } from '@/services/blockchainService';
 
 const ProviderDashboard: React.FC = () => {
   const { user } = useEhrAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [patientDocuments, setPatientDocuments] = useState<any[]>([]);
   
   if (!user || user.role !== 'provider') return null;
   
@@ -56,6 +57,23 @@ const ProviderDashboard: React.FC = () => {
       .join('')
       .toUpperCase();
   };
+
+  useEffect(() => {
+    const loadPatientDocuments = async () => {
+      const providerAddress = await getCurrentWalletAddress();
+      if (!providerAddress) return;
+      
+      // For each patient with access granted
+      for (const patient of patientsWithAccess) {
+        const documents = await getAccessibleDocuments(providerAddress, patient.walletAddress);
+        setPatientDocuments(prev => [...prev, ...documents]);
+      }
+    };
+    
+    if (walletConnected && patientsWithAccess.length > 0) {
+      loadPatientDocuments();
+    }
+  }, [walletConnected, patientsWithAccess]);
 
   return (
     <div className="space-y-6">

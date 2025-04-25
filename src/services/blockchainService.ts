@@ -1,4 +1,3 @@
-
 import { ethers } from "ethers";
 import { toast } from "@/components/ui/use-toast";
 import { CONTRACT_INFO } from "./contractHelper";
@@ -136,7 +135,18 @@ export const getPatientDocuments = async (patientAddress: string) => {
   
   try {
     const documents = await contract.getPatientDocuments(patientAddress);
-    return documents;
+    const documentDetails = await Promise.all(
+      documents.map(async (hash: string) => {
+        const details = await contract.getDocumentDetails(hash);
+        return {
+          documentHash: details[0],
+          documentType: details[1],
+          timestamp: Number(details[2]),
+          exists: details[3]
+        };
+      })
+    );
+    return documentDetails;
   } catch (error) {
     console.error("Error fetching patient documents:", error);
     return [];
