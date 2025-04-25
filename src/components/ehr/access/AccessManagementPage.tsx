@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Lock, Shield, AlertTriangle, CheckCircle, Users, FileText, X, Loader2, Search } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -10,7 +9,7 @@ import { useEhrAuth } from '@/contexts/EhrAuthContext';
 import { getAccessPermissionsByPatientId, getMedicalRecordsByPatientId, getProviderById } from '@/data/mockEhrData';
 import ConnectWallet from '@/components/ehr/wallet/ConnectWallet';
 import { toast } from '@/components/ui/use-toast';
-import { grantAccess, revokeAccess, checkAccess } from '@/services/blockchainService';
+import { grantAccess, revokeAccess, checkAccess, getCurrentWalletAddress } from '@/services/blockchainService';
 
 interface AccessRequest {
   id: string;
@@ -90,7 +89,7 @@ const AccessManagementPage: React.FC = () => {
           documentName: mockRecords[0]?.title || "Medical Record",
           documentHash: `0x${crypto.randomUUID().replace(/-/g, '')}`,
           requestDate: new Date(p.dateRequested),
-          status: p.status as 'granted' | 'pending' | 'denied'
+          status: p.status as 'granted' | 'denied'
         }));
       
       setAccessRequests(mockRequests);
@@ -123,7 +122,7 @@ const AccessManagementPage: React.FC = () => {
       
       if (success) {
         // Update local state
-        const updatedRequest = {...request, status: 'granted'};
+        const updatedRequest = {...request, status: 'granted' as const};
         
         setAccessRequests(prev => prev.filter(req => req.id !== request.id));
         setAccessHistory(prev => [updatedRequest, ...prev]);
@@ -150,7 +149,7 @@ const AccessManagementPage: React.FC = () => {
     
     try {
       // Update local state only for demo
-      const updatedRequest = {...request, status: 'denied'};
+      const updatedRequest = {...request, status: 'denied' as const};
       
       setAccessRequests(prev => prev.filter(req => req.id !== request.id));
       setAccessHistory(prev => [updatedRequest, ...prev]);
@@ -188,7 +187,7 @@ const AccessManagementPage: React.FC = () => {
       
       if (success) {
         // Update local state
-        const updatedRequest = {...request, status: 'denied'};
+        const updatedRequest = {...request, status: 'denied' as const};
         
         setAccessHistory(prev => 
           prev.map(item => item.id === request.id ? updatedRequest : item)

@@ -12,16 +12,6 @@ interface MainLayoutProps {
   requiredRole?: 'patient' | 'provider' | undefined;
 }
 
-// Add these interfaces to fix the TypeScript errors
-interface SidebarProps {
-  onClose: () => void;
-}
-
-interface HeaderProps {
-  onMenuClick: () => void;
-  showMenuButton: boolean;
-}
-
 const MainLayout: React.FC<MainLayoutProps> = ({ requiredRole }) => {
   const { user, isAuthenticated, isLoading } = useEhrAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);

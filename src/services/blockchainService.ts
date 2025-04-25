@@ -1,20 +1,7 @@
 
 import { ethers } from "ethers";
 import { toast } from "@/components/ui/use-toast";
-
-// This will be replaced with actual contract address and ABI
-const DOCUMENT_REGISTRY_CONTRACT = {
-  address: "0x0000000000000000000000000000000000000000", // Placeholder - will be replaced with actual deployed contract
-  abi: [
-    // Placeholder ABI - will be replaced with actual contract ABI
-    "function registerDocument(string memory documentHash, string memory documentType, uint256 timestamp) external",
-    "function grantAccess(address provider, string memory documentHash) external",
-    "function revokeAccess(address provider, string memory documentHash) external",
-    "function hasAccess(address provider, address patient, string memory documentHash) external view returns (bool)",
-    "function getPatientDocuments(address patient) external view returns (string[] memory)",
-    "function getAccessibleDocuments(address provider, address patient) external view returns (string[] memory)"
-  ]
-};
+import { CONTRACT_INFO } from "./contractHelper";
 
 export const connectToContract = async () => {
   if (!window.ethereum) {
@@ -31,8 +18,8 @@ export const connectToContract = async () => {
     const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
     const contract = new ethers.Contract(
-      DOCUMENT_REGISTRY_CONTRACT.address,
-      DOCUMENT_REGISTRY_CONTRACT.abi,
+      CONTRACT_INFO.address,
+      CONTRACT_INFO.abi,
       signer
     );
     return { contract, signer };
@@ -168,5 +155,40 @@ export const getAccessibleDocuments = async (providerAddress: string, patientAdd
   } catch (error) {
     console.error("Error fetching accessible documents:", error);
     return [];
+  }
+};
+
+export const getDocumentDetails = async (documentHash: string) => {
+  const connection = await connectToContract();
+  if (!connection) return null;
+  
+  const { contract } = connection;
+  
+  try {
+    const details = await contract.getDocumentDetails(documentHash);
+    return {
+      documentHash: details[0],
+      documentType: details[1],
+      timestamp: Number(details[2]),
+      exists: details[3]
+    };
+  } catch (error) {
+    console.error("Error fetching document details:", error);
+    return null;
+  }
+};
+
+export const getCurrentWalletAddress = async () => {
+  if (!window.ethereum) return null;
+  
+  try {
+    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+    if (accounts.length > 0) {
+      return accounts[0];
+    }
+    return null;
+  } catch (error) {
+    console.error("Error getting wallet address:", error);
+    return null;
   }
 };
