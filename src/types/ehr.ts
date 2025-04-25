@@ -7,6 +7,7 @@ export type User = {
   email: string;
   role: UserRole;
   avatarUrl?: string;
+  walletAddress?: string; // Added wallet address to be used with blockchain
 };
 
 export type Patient = User & {

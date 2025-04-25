@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useEhrAuth } from '@/contexts/EhrAuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +18,7 @@ const ProviderDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [patientDocuments, setPatientDocuments] = useState<any[]>([]);
+  const [walletConnected, setWalletConnected] = useState(false);
   
   if (!user || user.role !== 'provider') return null;
   
@@ -59,14 +61,40 @@ const ProviderDashboard: React.FC = () => {
   };
 
   useEffect(() => {
+    // Check if wallet is connected when component mounts
+    const checkWalletConnection = async () => {
+      const walletAddress = await getCurrentWalletAddress();
+      setWalletConnected(!!walletAddress);
+    };
+    
+    checkWalletConnection();
+    
+    // Set up event listener for account changes
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', (accounts: string[]) => {
+        setWalletConnected(accounts.length > 0);
+      });
+    }
+    
+    return () => {
+      // Clean up event listener
+      if (window.ethereum) {
+        window.ethereum.removeListener('accountsChanged', () => {});
+      }
+    };
+  }, []);
+  
+  useEffect(() => {
     const loadPatientDocuments = async () => {
       const providerAddress = await getCurrentWalletAddress();
       if (!providerAddress) return;
       
       // For each patient with access granted
       for (const patient of patientsWithAccess) {
-        const documents = await getAccessibleDocuments(providerAddress, patient.walletAddress);
-        setPatientDocuments(prev => [...prev, ...documents]);
+        if (patient.walletAddress) {
+          const documents = await getAccessibleDocuments(providerAddress, patient.walletAddress);
+          setPatientDocuments(prev => [...prev, ...documents]);
+        }
       }
     };
     
