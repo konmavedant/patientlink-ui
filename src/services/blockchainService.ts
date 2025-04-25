@@ -1,4 +1,3 @@
-
 import { ethers } from "ethers";
 import { toast } from "@/components/ui/use-toast";
 import { CONTRACT_INFO } from "./contractHelper";
@@ -34,14 +33,13 @@ export const connectToContract = async () => {
   }
 };
 
-export const registerDocument = async (documentHash: string, documentType: string) => {
+export const registerDocument = async (documentHash: string, documentType: string, timestamp: number) => {
   const connection = await connectToContract();
-  if (!connection) return false;
+  if (!connection) return null;
   
   const { contract } = connection;
   
   try {
-    const timestamp = Math.floor(Date.now() / 1000);
     console.log(`Registering document with hash ${documentHash}, type ${documentType}, timestamp ${timestamp}`);
     const tx = await contract.registerDocument(documentHash, documentType, timestamp);
     console.log("Transaction hash:", tx.hash);
@@ -54,7 +52,7 @@ export const registerDocument = async (documentHash: string, documentType: strin
       title: "Document Registered",
       description: "Your document has been securely registered on the blockchain",
     });
-    return true;
+    return tx.hash;
   } catch (error) {
     console.error("Error registering document:", error);
     toast({
@@ -62,7 +60,7 @@ export const registerDocument = async (documentHash: string, documentType: strin
       description: `Failed to register document: ${error instanceof Error ? error.message : 'Unknown error'}`,
       variant: "destructive",
     });
-    return false;
+    return null;
   }
 };
 

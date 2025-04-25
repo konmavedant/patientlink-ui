@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Upload, FileText, CheckCircle, FilePlus, X, Loader2, Check, File } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,11 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useEhrAuth } from '@/contexts/EhrAuthContext';
 import { toast } from '@/components/ui/use-toast';
-import { useDocumentUpload } from '@/hooks/useDocumentUpload';
-import { getCurrentWalletAddress, grantAccess } from '@/services/blockchainService';
+import { useFileUpload } from '@/hooks/useFileUpload';
 import ConnectWallet from '@/components/ehr/wallet/ConnectWallet';
 import { MedicalRecord, Provider } from '@/types/ehr';
-import { mockPatients, mockProviders } from '@/data/mockEhrData';
+import { mockProviders } from '@/data/mockEhrData';
 
 interface UploadedDocument {
   id: string;
@@ -27,7 +25,7 @@ interface UploadedDocument {
 
 const UploadDataPage: React.FC = () => {
   const { user } = useEhrAuth();
-  const { uploadDocument, isUploading } = useDocumentUpload();
+  const { uploadToBlockchain, isUploading, transaction } = useFileUpload();
   const [dragActive, setDragActive] = useState(false);
   const [walletConnected, setWalletConnected] = useState(false);
   const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
@@ -35,13 +33,11 @@ const UploadDataPage: React.FC = () => {
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
   const [accessGranting, setAccessGranting] = useState<Record<string, boolean>>({});
   
-  // Load saved documents from localStorage on component mount
   useEffect(() => {
     try {
       const savedDocs = localStorage.getItem('uploadedDocuments');
       if (savedDocs) {
         const parsedDocs = JSON.parse(savedDocs);
-        // Convert string dates back to Date objects
         const docsWithDates = parsedDocs.map((doc: any) => ({
           ...doc,
           uploadDate: new Date(doc.uploadDate)
@@ -52,11 +48,9 @@ const UploadDataPage: React.FC = () => {
       console.error("Error loading saved documents:", error);
     }
     
-    // Load mock providers
     setProviders(mockProviders);
   }, []);
   
-  // Save documents to localStorage when they change
   useEffect(() => {
     try {
       localStorage.setItem('uploadedDocuments', JSON.stringify(uploadedDocuments));
@@ -103,16 +97,7 @@ const UploadDataPage: React.FC = () => {
   };
 
   const processFiles = async (files: FileList | null) => {
-    if (!files || !walletConnected) {
-      if (!walletConnected) {
-        toast({
-          title: "Wallet Not Connected",
-          description: "Please connect your wallet to upload documents",
-          variant: "destructive",
-        });
-      }
-      return;
-    }
+    if (!files) return;
     
     const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
     const maxSize = 10 * 1024 * 1024; // 10MB
@@ -137,33 +122,46 @@ const UploadDataPage: React.FC = () => {
         });
         continue;
       }
+
+      const success = await uploadToBlockchain(file);
       
-      const { success, hash, record } = await uploadDocument(file, user?.id);
-      
-      if (success && hash) {
-        // Generate preview for images
+      if (success) {
         let preview = undefined;
         if (file.type.startsWith('image/')) {
           preview = URL.createObjectURL(file);
         }
         
-        const newDocument: UploadedDocument = {
+        const newDocument = {
           id: crypto.randomUUID(),
           name: file.name,
           type: file.type,
           size: file.size,
           uploadDate: new Date(),
-          hash,
+          hash: transaction || '',
           registered: true,
           preview,
-          record
         };
         
         setUploadedDocuments(prev => [newDocument, ...prev]);
-        
+
         toast({
-          title: "Upload Successful",
-          description: `${file.name} was successfully uploaded and registered on the blockchain.`,
+          title: "Transaction Confirmed",
+          description: (
+            <div className="mt-2 text-xs">
+              <p>Document uploaded successfully!</p>
+              <p className="mt-1">
+                Transaction Hash:{' '}
+                <a
+                  href={`https://sepolia.etherscan.io/tx/${transaction}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 hover:underline"
+                >
+                  {transaction?.slice(0, 10)}...{transaction?.slice(-8)}
+                </a>
+              </p>
+            </div>
+          ),
         });
       }
     }
