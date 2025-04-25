@@ -28,6 +28,7 @@ export type Provider = User & {
   specialty: string;
   license: string;
   hospital?: string;
+  walletAddress?: string; // Ensure wallet address is available for providers
 };
 
 export type RecordType = 

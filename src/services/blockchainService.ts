@@ -1,3 +1,4 @@
+
 import { ethers } from "ethers";
 import { toast } from "@/components/ui/use-toast";
 import { CONTRACT_INFO } from "./contractHelper";
@@ -41,8 +42,13 @@ export const registerDocument = async (documentHash: string, documentType: strin
   
   try {
     const timestamp = Math.floor(Date.now() / 1000);
+    console.log(`Registering document with hash ${documentHash}, type ${documentType}, timestamp ${timestamp}`);
     const tx = await contract.registerDocument(documentHash, documentType, timestamp);
-    await tx.wait();
+    console.log("Transaction hash:", tx.hash);
+    
+    // Wait for transaction confirmation
+    const receipt = await tx.wait();
+    console.log("Transaction confirmed, receipt:", receipt);
     
     toast({
       title: "Document Registered",
@@ -53,7 +59,7 @@ export const registerDocument = async (documentHash: string, documentType: strin
     console.error("Error registering document:", error);
     toast({
       title: "Registration Failed",
-      description: "Failed to register document on blockchain",
+      description: `Failed to register document: ${error instanceof Error ? error.message : 'Unknown error'}`,
       variant: "destructive",
     });
     return false;
@@ -67,8 +73,13 @@ export const grantAccess = async (providerAddress: string, documentHash: string)
   const { contract } = connection;
   
   try {
+    console.log(`Granting access to provider ${providerAddress} for document ${documentHash}`);
     const tx = await contract.grantAccess(providerAddress, documentHash);
-    await tx.wait();
+    console.log("Transaction hash:", tx.hash);
+    
+    // Wait for transaction confirmation
+    const receipt = await tx.wait();
+    console.log("Transaction confirmed, receipt:", receipt);
     
     toast({
       title: "Access Granted",
@@ -79,7 +90,7 @@ export const grantAccess = async (providerAddress: string, documentHash: string)
     console.error("Error granting access:", error);
     toast({
       title: "Action Failed",
-      description: "Failed to grant access to provider",
+      description: `Failed to grant access: ${error instanceof Error ? error.message : 'Unknown error'}`,
       variant: "destructive",
     });
     return false;
@@ -93,8 +104,13 @@ export const revokeAccess = async (providerAddress: string, documentHash: string
   const { contract } = connection;
   
   try {
+    console.log(`Revoking access from provider ${providerAddress} for document ${documentHash}`);
     const tx = await contract.revokeAccess(providerAddress, documentHash);
-    await tx.wait();
+    console.log("Transaction hash:", tx.hash);
+    
+    // Wait for transaction confirmation
+    const receipt = await tx.wait();
+    console.log("Transaction confirmed, receipt:", receipt);
     
     toast({
       title: "Access Revoked",
@@ -105,7 +121,7 @@ export const revokeAccess = async (providerAddress: string, documentHash: string
     console.error("Error revoking access:", error);
     toast({
       title: "Action Failed",
-      description: "Failed to revoke provider access",
+      description: `Failed to revoke access: ${error instanceof Error ? error.message : 'Unknown error'}`,
       variant: "destructive",
     });
     return false;
@@ -119,7 +135,9 @@ export const checkAccess = async (providerAddress: string, patientAddress: strin
   const { contract } = connection;
   
   try {
+    console.log(`Checking if provider ${providerAddress} has access to document ${documentHash} from patient ${patientAddress}`);
     const hasAccess = await contract.hasAccess(providerAddress, patientAddress, documentHash);
+    console.log("Access status:", hasAccess);
     return hasAccess;
   } catch (error) {
     console.error("Error checking access:", error);
@@ -134,7 +152,10 @@ export const getPatientDocuments = async (patientAddress: string) => {
   const { contract } = connection;
   
   try {
+    console.log(`Getting documents for patient ${patientAddress}`);
     const documents = await contract.getPatientDocuments(patientAddress);
+    console.log("Patient documents:", documents);
+    
     const documentDetails = await Promise.all(
       documents.map(async (hash: string) => {
         const details = await contract.getDocumentDetails(hash);
@@ -146,6 +167,7 @@ export const getPatientDocuments = async (patientAddress: string) => {
         };
       })
     );
+    console.log("Document details:", documentDetails);
     return documentDetails;
   } catch (error) {
     console.error("Error fetching patient documents:", error);
@@ -160,8 +182,30 @@ export const getAccessibleDocuments = async (providerAddress: string, patientAdd
   const { contract } = connection;
   
   try {
+    console.log(`Getting accessible documents for provider ${providerAddress} from patient ${patientAddress}`);
     const documents = await contract.getAccessibleDocuments(providerAddress, patientAddress);
-    return documents;
+    console.log("Accessible documents:", documents);
+    
+    // Get details for each document
+    const documentDetails = await Promise.all(
+      documents.map(async (hash: string) => {
+        try {
+          const details = await contract.getDocumentDetails(hash);
+          return {
+            documentHash: details[0],
+            documentType: details[1],
+            timestamp: Number(details[2]),
+            exists: details[3]
+          };
+        } catch (err) {
+          console.error(`Error fetching details for document ${hash}:`, err);
+          return null;
+        }
+      })
+    );
+    
+    // Filter out null entries (failed fetches)
+    return documentDetails.filter(Boolean);
   } catch (error) {
     console.error("Error fetching accessible documents:", error);
     return [];
@@ -175,7 +219,10 @@ export const getDocumentDetails = async (documentHash: string) => {
   const { contract } = connection;
   
   try {
+    console.log(`Getting details for document ${documentHash}`);
     const details = await contract.getDocumentDetails(documentHash);
+    console.log("Document details:", details);
+    
     return {
       documentHash: details[0],
       documentType: details[1],

@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Upload, FileText, CheckCircle, FilePlus, X, Loader2 } from 'lucide-react';
+import { Upload, FileText, CheckCircle, FilePlus, X, Loader2, Check, File } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,8 +8,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useEhrAuth } from '@/contexts/EhrAuthContext';
 import { toast } from '@/components/ui/use-toast';
 import { useDocumentUpload } from '@/hooks/useDocumentUpload';
-import { getCurrentWalletAddress } from '@/services/blockchainService';
+import { getCurrentWalletAddress, grantAccess } from '@/services/blockchainService';
 import ConnectWallet from '@/components/ehr/wallet/ConnectWallet';
+import { MedicalRecord, Provider } from '@/types/ehr';
+import { mockPatients, mockProviders } from '@/data/mockEhrData';
 
 interface UploadedDocument {
   id: string;
@@ -19,6 +22,7 @@ interface UploadedDocument {
   hash: string;
   registered: boolean;
   preview?: string;
+  record?: MedicalRecord;
 }
 
 const UploadDataPage: React.FC = () => {
@@ -27,6 +31,39 @@ const UploadDataPage: React.FC = () => {
   const [dragActive, setDragActive] = useState(false);
   const [walletConnected, setWalletConnected] = useState(false);
   const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
+  const [accessGranting, setAccessGranting] = useState<Record<string, boolean>>({});
+  
+  // Load saved documents from localStorage on component mount
+  useEffect(() => {
+    try {
+      const savedDocs = localStorage.getItem('uploadedDocuments');
+      if (savedDocs) {
+        const parsedDocs = JSON.parse(savedDocs);
+        // Convert string dates back to Date objects
+        const docsWithDates = parsedDocs.map((doc: any) => ({
+          ...doc,
+          uploadDate: new Date(doc.uploadDate)
+        }));
+        setUploadedDocuments(docsWithDates);
+      }
+    } catch (error) {
+      console.error("Error loading saved documents:", error);
+    }
+    
+    // Load mock providers
+    setProviders(mockProviders);
+  }, []);
+  
+  // Save documents to localStorage when they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('uploadedDocuments', JSON.stringify(uploadedDocuments));
+    } catch (error) {
+      console.error("Error saving documents:", error);
+    }
+  }, [uploadedDocuments]);
 
   useEffect(() => {
     const checkWallet = async () => {
@@ -66,7 +103,16 @@ const UploadDataPage: React.FC = () => {
   };
 
   const processFiles = async (files: FileList | null) => {
-    if (!files) return;
+    if (!files || !walletConnected) {
+      if (!walletConnected) {
+        toast({
+          title: "Wallet Not Connected",
+          description: "Please connect your wallet to upload documents",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
     
     const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
     const maxSize = 10 * 1024 * 1024; // 10MB
@@ -92,7 +138,7 @@ const UploadDataPage: React.FC = () => {
         continue;
       }
       
-      const { success, hash } = await uploadDocument(file);
+      const { success, hash, record } = await uploadDocument(file, user?.id);
       
       if (success && hash) {
         // Generate preview for images
@@ -109,10 +155,16 @@ const UploadDataPage: React.FC = () => {
           uploadDate: new Date(),
           hash,
           registered: true,
-          preview
+          preview,
+          record
         };
         
         setUploadedDocuments(prev => [newDocument, ...prev]);
+        
+        toast({
+          title: "Upload Successful",
+          description: `${file.name} was successfully uploaded and registered on the blockchain.`,
+        });
       }
     }
   };
@@ -141,7 +193,40 @@ const UploadDataPage: React.FC = () => {
     } else if (fileType === 'application/pdf') {
       return <FilePlus className="h-6 w-6" />;
     } else {
-      return <FileText className="h-6 w-6" />;
+      return <File className="h-6 w-6" />;
+    }
+  };
+  
+  const handleGrantAccess = async (document: UploadedDocument, provider: Provider) => {
+    if (!provider.walletAddress) {
+      toast({
+        title: "Provider Not Found",
+        description: "The selected provider does not have a wallet address.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setAccessGranting({...accessGranting, [document.id]: true});
+    
+    try {
+      const success = await grantAccess(provider.walletAddress, document.hash);
+      
+      if (success) {
+        toast({
+          title: "Access Granted",
+          description: `${provider.name} now has access to this document.`,
+        });
+      }
+    } catch (error) {
+      console.error("Error granting access:", error);
+      toast({
+        title: "Error",
+        description: "Failed to grant access to the provider.",
+        variant: "destructive",
+      });
+    } finally {
+      setAccessGranting({...accessGranting, [document.id]: false});
     }
   };
   
@@ -185,12 +270,14 @@ const UploadDataPage: React.FC = () => {
               
               <div className="mt-2">
                 <label htmlFor="file-upload" className="cursor-pointer">
-                  <Button variant="default" size="default" disabled={isUploading}>
+                  <Button variant="default" size="default" disabled={isUploading || !walletConnected}>
                     {isUploading ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
                         Uploading...
                       </>
+                    ) : !walletConnected ? (
+                      "Connect Wallet First"
                     ) : (
                       "Browse Files"
                     )}
@@ -202,7 +289,7 @@ const UploadDataPage: React.FC = () => {
                     multiple
                     className="hidden"
                     onChange={handleFileInput}
-                    disabled={isUploading}
+                    disabled={isUploading || !walletConnected}
                   />
                 </label>
               </div>
@@ -259,37 +346,87 @@ const UploadDataPage: React.FC = () => {
                       ) : null}
                     </div>
                     
-                    {document.preview && (
+                    <div className="flex items-center justify-between mt-3">
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="mt-2 px-0">
-                            Preview Document
+                          <Button variant="outline" size="sm">
+                            Share with Provider
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-3xl">
+                        <DialogContent>
                           <DialogHeader>
-                            <DialogTitle>{document.name}</DialogTitle>
+                            <DialogTitle>Grant Access to Provider</DialogTitle>
                             <DialogDescription>
-                              Uploaded {document.uploadDate.toLocaleString()}
+                              Select a healthcare provider to grant access to this document.
                             </DialogDescription>
                           </DialogHeader>
                           
-                          <div className="flex items-center justify-center p-2 bg-muted rounded-lg">
-                            <img 
-                              src={document.preview} 
-                              alt={document.name} 
-                              className="max-h-[70vh] max-w-full object-contain"
-                            />
+                          <div className="space-y-4 my-4">
+                            {providers.map(provider => (
+                              <div key={provider.id} className="flex items-center justify-between p-3 border rounded-md">
+                                <div>
+                                  <p className="font-medium">{provider.name}</p>
+                                  <p className="text-sm text-muted-foreground">{provider.specialty}</p>
+                                </div>
+                                <Button 
+                                  variant="default" 
+                                  size="sm" 
+                                  onClick={() => handleGrantAccess(document, provider)}
+                                  disabled={accessGranting[document.id]}
+                                >
+                                  {accessGranting[document.id] ? (
+                                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                  ) : (
+                                    <Check className="h-4 w-4 mr-2" />
+                                  )}
+                                  Grant Access
+                                </Button>
+                              </div>
+                            ))}
+                            
+                            {providers.length === 0 && (
+                              <p className="text-center text-muted-foreground">No providers available</p>
+                            )}
                           </div>
                           
                           <DialogFooter>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <span>Document Hash: {document.hash.slice(0, 10)}...{document.hash.slice(-10)}</span>
-                            </div>
+                            <Button variant="outline" onClick={() => {}} className="w-full">Done</Button>
                           </DialogFooter>
                         </DialogContent>
                       </Dialog>
-                    )}
+                      
+                      {document.preview && (
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              Preview Document
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-3xl">
+                            <DialogHeader>
+                              <DialogTitle>{document.name}</DialogTitle>
+                              <DialogDescription>
+                                Uploaded {document.uploadDate.toLocaleString()}
+                              </DialogDescription>
+                            </DialogHeader>
+                            
+                            <div className="flex items-center justify-center p-2 bg-muted rounded-lg">
+                              <img 
+                                src={document.preview} 
+                                alt={document.name} 
+                                className="max-h-[70vh] max-w-full object-contain"
+                              />
+                            </div>
+                            
+                            <DialogFooter>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span>Document Hash: {document.hash.slice(0, 10)}...{document.hash.slice(-10)}</span>
+                              </div>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

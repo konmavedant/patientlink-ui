@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { toast } from "@/components/ui/use-toast";
 import { registerDocument, grantAccess, getCurrentWalletAddress } from '@/services/blockchainService';
+import { MedicalRecord } from '@/types/ehr';
 
 export const useDocumentUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
@@ -14,7 +15,7 @@ export const useDocumentUpload = () => {
     return hashHex;
   };
 
-  const uploadDocument = async (file: File): Promise<{ success: boolean; hash?: string }> => {
+  const uploadDocument = async (file: File, patientId?: string, providerId?: string): Promise<{ success: boolean; hash?: string; record?: MedicalRecord }> => {
     setIsUploading(true);
     
     try {
@@ -35,7 +36,30 @@ export const useDocumentUpload = () => {
       const success = await registerDocument(documentHash, file.type);
       
       if (success) {
-        return { success: true, hash: documentHash };
+        // Create a medical record entry
+        const newRecord: MedicalRecord = {
+          id: crypto.randomUUID(),
+          patientId: patientId || "current-patient", // This would be set properly in a real app
+          providerId: providerId || "self-upload", // If the patient uploads it themselves
+          providerName: providerId ? "Doctor" : "Self Upload",
+          type: getRecordTypeFromFileType(file.type),
+          title: file.name,
+          date: new Date().toISOString(),
+          description: `Uploaded document: ${file.name}`,
+          details: {
+            fileSize: file.size,
+            fileType: file.type,
+          },
+          attachments: [{
+            name: file.name,
+            url: URL.createObjectURL(file),
+            type: file.type,
+          }],
+          blockchainHash: documentHash,
+          lastModified: new Date().toISOString(),
+        };
+        
+        return { success: true, hash: documentHash, record: newRecord };
       }
       
       return { success: false };
@@ -43,13 +67,19 @@ export const useDocumentUpload = () => {
       console.error("Error uploading document:", error);
       toast({
         title: "Upload Failed",
-        description: "Failed to upload document",
+        description: `Failed to upload document: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
       return { success: false };
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const getRecordTypeFromFileType = (fileType: string): 'imaging' | 'lab' | 'note' => {
+    if (fileType.startsWith('image/')) return 'imaging';
+    if (fileType === 'application/pdf') return 'lab';
+    return 'note';
   };
 
   return { uploadDocument, isUploading };
